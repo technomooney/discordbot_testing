@@ -38,15 +38,21 @@ async def ping(ctx):
 
 @client.command(aliases=['8ball'])
 async def _8ball(ctx, *, question):
-    answer = requested_8ball(question)
-    await ctx.send(answer['answer'])
+    answer = _8ball_api(question)
+    await ctx.send(f"Question: {answer['question']}\n Answer: {answer['answer']}")
     await ctx.send(f'the response type was {answer["type"]}')
 
 
-def requested_8ball(question):
+def _8ball_api(question):
     url = 'https://8ball.delegator.com/magic/JSON/'
     response = requests.get(url+question).json()
     return response['magic']
+
+@client.command(aliases=["quit"])
+async def close(ctx):
+    await ctx.send('Ok, Bye!')
+    await client.close()
+    print("Bot Closed")  # This is optional, but it is there to tell you.
 
 
 client.run(TOKEN)
