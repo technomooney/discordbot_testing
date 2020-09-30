@@ -1,4 +1,3 @@
-#! /usr/python3.8
 # bot.py
 import os
 
