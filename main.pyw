@@ -1,11 +1,12 @@
 # bot.py
 import os
-
-import discord
 from discord.ext import commands as c
 import dotenv
 import requests
 dotenv.load_dotenv()
+import pyradios
+
+radio_browser = pyradios.radios.RadioBrowser()
 
 CUSTOM_PREFIXES = eval(os.getenv('CUSTOM_PREFIXES'))
 print(CUSTOM_PREFIXES)
@@ -39,6 +40,8 @@ async def set_prefix(ctx, *, prefixes=""):
     print(ctx.guild.id)
     CUSTOM_PREFIXES[ctx.guild.id] = prefixes.split() or default_prefix
     await ctx.send("Prefixes set!")
+
+
 
 
 @client.event
