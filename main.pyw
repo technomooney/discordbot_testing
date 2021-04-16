@@ -9,8 +9,14 @@ import aiohttp
 import time
 import pyradios
 import subprocess
+import logging
 
-
+#
+# logger = logging.getLogger('discord')
+# logger.setLevel(logging.DEBUG)
+# handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+# handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+# logger.addHandler(handler)
 
 env_file="./.env"
 dotenv.load_dotenv(env_file)
@@ -39,7 +45,6 @@ async def determine_prefix(ctx, message):
 
 
 bot = commands.Bot(command_prefix=determine_prefix)
-
 
 @bot.command(name='setprefix')
 @commands.guild_only()
@@ -138,29 +143,59 @@ async def pissy_bot(ctx, language="en"):
     await ctx.send(response)
 
 
-@bot.command(name='play',help="this is the command to join the current ")
-async def play(ctx,time_fraim=10):
-    # author = ctx.message.author
-    # channel = ctx.author.voice.channel
-    # vc = await channel.connect()
-    # print(channel, type(channel))
-    # # vc = await discord.voice_client.VoiceClient.voice_connect()
-    # print()
-    # print(vc)
+@bot.command(name='play_url',help="this is the command to join the current ")
+async def play_url(ctx,url="http://musicbird.leanstream.co/JCB086-MP3"):
     voicechannel = discord.utils.get(ctx.guild.channels, name=ctx.author.voice.channel.name)
     vc = await voicechannel.connect()
-    async with aiohttp.ClientSession() as session:
-        async with session.get('http://musicbird.leanstream.co/JCB086-MP3') as response:
-            print(response.read())
-    request_stream = requests.get('http://musicbird.leanstream.co/JCB086-MP3', stream=True)
-    print(request_stream.content)
-    print(request_stream.content.decode())
-    vc.play(discord.FFmpegAudio(get_stream_data("http://musicbird.leanstream.co/JCB086-MP3")))
+    vc.play(discord.FFmpegPCMAudio(url))
     await ctx.send("ran the join command")
 
-async def get_stream_data(url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
+@bot.command(name='radiofuzzsearch',
+            help="this is the fuzzy (search like google) search for a radio station and get a url for a station to pass "
+                 "to the getradiourl command, just type the command in and you can get more help")
+async def radiofuzzsearch(ctx, search_terms=None):
+    print(search_terms)
+    if search_terms != None:
+        results = radio_browser.search(name=search_terms)
+    else:
+        results=''
+
+    # search_param_list = ['name=','country=','countrycode=','state=','language=','tag=','codec=']
+    # if_check = False
+    # for item in search_param_list:
+    #     if item in search_terms:
+    #         if_check = True
+    #     else:
+    #         continue
+    # if if_check:
+    #     results = radio_browser.search(search_terms)
+    # elif not if_check:
+    #     results = radio_browser.search(name=search_terms)
+    # else:
+    #     await ctx.send(f"something is wrong with your search request:\n{search_terms}")
+    await ctx.send(f"there are {len(results)} results including unsupported results\n\n"
+                   f"please look at the results and send the station uuid to the getradiourl command\n{chr(0)}")
+    send_string = f'{chr(0)}'
+    unsupported_station_count = 0
+    for item in results:
+        if 'm3u8' in item['url_resolved']:
+            unsupported_station_count +=1
+            continue
+        name = r"{}".format(item['name'])
+        language = r"{}".format(item['language'])
+        country = r"{}".format(item['country'])
+        tags = r"{}".format(item['tags'])
+        station_uuid = r"{}".format(item['stationuuid'])
+        send_string += f"name: {name} language: {language} country: {country} tags: {tags} station uid: {station_uuid}\n\n"
+    print(f'there were {unsupported_station_count} unsupported stations')
+    if len(send_string) >= 2000:
+        await ctx.send(f"{send_string[:1966] + '~~text cut off! be more specific!'}")
+    else:
+        await ctx.send(f"{send_string}")
+    await ctx.send(f' \n\n\nthere was {unsupported_station_count} unsupported stations')
+    if search_terms == None:
+        await ctx.send(f"you can use the site https://www.radio-browser.info/#!/search to find a station you want and "
+                       f"paste the exact name as the search term")
 
 
 @bot.command(name='leave')
